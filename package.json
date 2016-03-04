@@ -1,0 +1,10 @@
+﻿{
+	"name": "battlesnakes",
+	"version": "1.0.0",
+	"description": "A multiplayer snake game.",
+	"author": "skotmerfie",
+	"dependencies": {
+		"express": "4.10.2",
+		"socket.io": ""
+	}
+}

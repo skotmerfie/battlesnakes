@@ -1,0 +1,42 @@
+﻿<!doctype html>
+<html>
+<head>
+	<title>Battle Snakes</title>
+	<style>
+		#deadForm {
+			border: solid 1px black;
+			padding: 10px;
+			background-color: lightgray;
+		}
+		#deadForm div {
+			margin: 3px;
+			width: 100%;
+		}
+		#deadForm label {
+			display: inline-block;
+			width: 50px;
+		}
+		#deadForm #color {
+			width: 50px;
+		}
+		#deadForm #button {
+			text-align: center;
+		}
+		#deadForm #button #play {
+			width: 100px;
+		}
+	</style>
+</head>
+<body style="margin:0px;">
+	<canvas id="canvas" width="1000" height="700"></canvas>
+	<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="client.js"></script>
+
+	<div id="deadForm" style="display: none; position: absolute; left: 400px; top: 250px;">
+		<div><label for="name">Name:</label><input type="text" id="name" /></div>
+		<div><label for="color">Color:</label><input type="color" id="color" /></div>
+		<div id="button"><input type="button" id="play" value="Play" /></div>
+	</div>
+</body>
+</html>
