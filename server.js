@@ -59,7 +59,7 @@ io.on('connection', function (socket) {
 		socket.emit('snakes', snakes);
 		socket.emit('food', food);
 		socket.emit('killedSnakes', killedSnakes);
-	}, 17);
+	}, 25);
 });
 
 setInterval(function () {
@@ -83,7 +83,7 @@ setInterval(function () {
 			killedSnakes[id] = id;
 			delete snakes[id];
 
-			if (snakeCollision >= 0) {
+			if (snakeCollision >= 0 && snakeCollision !== id) {
 				snakes[snakeCollision].score++;
 			}
 		} else {
