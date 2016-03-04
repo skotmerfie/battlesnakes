@@ -83,7 +83,7 @@ setInterval(function () {
 			killedSnakes[id] = id;
 			delete snakes[id];
 
-			if (snakeCollision >= 0 && snakeCollision !== id) {
+			if (snakeCollision >= 0 && snakeCollision !== snake.id) {
 				snakes[snakeCollision].score++;
 			}
 		} else {
