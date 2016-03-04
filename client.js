@@ -56,7 +56,7 @@
 		playerList.empty();
 		for (snakeId in snakes) {
 			var snake = snakes[snakeId];
-			$("<li>" + snake.name + " (" + snake.score + ")</li>").appendTo(playerList);
+			$("<li><span class='bullet' style=\"color:" + snake.color + "\">■</span>" + snake.name + " (" + snake.score + ")</li>").appendTo(playerList);
 		}
 	}
 
@@ -64,7 +64,7 @@
 		paintBackground();
 		paintSnakes();
 		paintFood();
-	}, 17);
+	}, 30);
 
 	setInterval(function () {
 		updateScoreboard();
@@ -72,7 +72,7 @@
 		if (me.alive === 0) {
 			deadForm.style.display = "block";
 		}
-	}, 100);
+	}, 500);
 
 	deadForm_play.onclick = function (evt) {
 		var name = deadForm_name.value;
