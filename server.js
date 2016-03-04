@@ -1,4 +1,4 @@
-﻿var port = process.env.PORT || 3000;
+﻿var port = process.env.port || 8080;
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
@@ -32,6 +32,7 @@ io.on('connection', function (socket) {
 			name: data.name,
 			color: data.color,
 			direction: 'right',
+			score: 0,
 			cells: []
 		};
 
@@ -77,14 +78,20 @@ setInterval(function () {
 			newY--;
 		}
 
-		if (newX === -1 || newX === grid_max_width || newY === -1 || newY === grid_max_height || checkSnakeCollision(newX, newY)) {
+		var snakeCollision = checkSnakeCollision(newX, newY);
+		if (newX === -1 || newX === grid_max_width || newY === -1 || newY === grid_max_height || snakeCollision >= 0) {
 			killedSnakes[id] = id;
 			delete snakes[id];
+
+			if (snakeCollision >= 0) {
+				snakes[snakeCollision].score++;
+			}
 		} else {
 			var eatenFood = checkFoodCollision(newX, newY);
 			if (eatenFood >= 0) {
 				delete food[eatenFood];
 				createFood();
+				snake.score++;
 			} else {
 				snake.cells.pop();
 			}
@@ -116,12 +123,12 @@ function checkSnakeCollision(x, y, id) {
 		if (snake.id !== id) {
 			for (var i = 0; i < snake.cells.length; i++) {
 				if (snake.cells[i].x === x && snake.cells[i].y === y) {
-					return true;
+					return snake.id;
 				}
 			}
 		}
 	}
-	return false;
+	return -1;
 }
 
 function checkFoodCollision(x, y) {
