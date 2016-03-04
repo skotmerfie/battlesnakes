@@ -1,4 +1,5 @@
-﻿var app = require('express')();
+﻿var port = process.env.PORT || 3000;
+var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
@@ -10,7 +11,7 @@ app.get('/client.js', function (req, res) {
 	res.sendFile(__dirname + '/client.js');
 });
 
-http.listen(8080, function () { });
+http.listen(port, function () { });
 
 var snakes = {};
 var killedSnakes = {};
