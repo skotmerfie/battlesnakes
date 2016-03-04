@@ -25,10 +25,20 @@
 		#deadForm #button #play {
 			width: 100px;
 		}
+
+		#scoreboardArea {
+			margin: 10px;
+			font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+		}
 	</style>
 </head>
 <body style="margin:0px;">
-	<canvas id="canvas" width="1000" height="700"></canvas>
+	<canvas id="canvas" width="1000" height="700" style="float: left;"></canvas>
+	<div id="scoreboardArea" style="float:left;">
+		<h1><u>Scoreboard</u></h1>
+		<ul id="playerList"></ul>
+	</div>
+
 	<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="client.js"></script>
