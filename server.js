@@ -1,5 +1,4 @@
-﻿var port = process.env.PORT || 8080;
-var app = require('express')();
+﻿var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
@@ -11,7 +10,7 @@ app.get('/client.js', function (req, res) {
 	res.sendFile(__dirname + '/client.js');
 });
 
-http.listen(port, function () { });
+http.listen(8080, function () { });
 
 var snakes = {};
 var killedSnakes = {};
@@ -49,14 +48,16 @@ io.on('connection', function (socket) {
 
 	socket.on('direction', function (data) {
 		var snake = snakes[data.id];
-		snake.direction = data.direction;
+		if (snake !== undefined) {
+			snake.direction = data.direction;
+		}
 	});
 
 	setInterval(function () {
 		socket.emit('snakes', snakes);
 		socket.emit('food', food);
 		socket.emit('killedSnakes', killedSnakes);
-	}, 10);
+	}, 17);
 });
 
 setInterval(function () {
@@ -93,12 +94,13 @@ setInterval(function () {
 			});
 		}
 	}
+	createFood();
 }, 60);
 
 setInterval(function () {
-	createFood();
 	killedSnakes = {};
-}, 15000);
+	food = {};
+}, 60000);
 
 function randomCoordinates() {
 	return {
@@ -138,7 +140,7 @@ function countSnakes() {
 	return count;
 }
 
-function coundFood() {
+function countFood() {
 	var count = 0;
 	for (f in food) {
 		count++;
@@ -147,8 +149,7 @@ function coundFood() {
 }
 
 function createFood() {
-	if (coundFood() < Math.min(Math.max(1, countSnakes()), max_food)) {
+	if (countFood() < Math.min(Math.max(1, countSnakes()), max_food)) {
 		food[Date.now()] = randomCoordinates();
 	}
 }
-createFood();
