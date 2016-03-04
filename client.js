@@ -59,7 +59,7 @@
 		if (me.alive === 0) {
 			deadForm.style.display = "block";
 		}
-	}, 10);
+	}, 17);
 
 	deadForm_play.onclick = function (evt) {
 		var name = deadForm_name.value;
