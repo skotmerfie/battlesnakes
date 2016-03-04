@@ -3,6 +3,7 @@
 	var deadForm_name = $("#name")[0];
 	var deadForm_color = $("#color")[0];
 	var deadForm_play = $("#play")[0];
+	var playerList = $("#playerList");
 
 	var canvas = $("#canvas")[0];
 	var ctx = canvas.getContext("2d");
@@ -51,10 +52,19 @@
 		ctx.strokeRect(0, 0, screen_width, screen_height);
 	}
 
+	function updateScoreboard() {
+		playerList.empty();
+		for (snakeId in snakes) {
+			var snake = snakes[snakeId];
+			$("<li>" + snake.name + " (" + snake.score + ")</li>").appendTo(playerList);
+		}
+	}
+
 	setInterval(function () {
 		paintBackground();
 		paintSnakes();
 		paintFood();
+		updateScoreboard();
 
 		if (me.alive === 0) {
 			deadForm.style.display = "block";
