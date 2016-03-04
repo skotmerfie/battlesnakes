@@ -23,7 +23,7 @@
 	function paintCell(x, y, color) {
 		ctx.fillStyle = color;
 		ctx.fillRect(x * cell_width, y * cell_width, cell_width, cell_width);
-		ctx.strokeStyle = "white";
+		ctx.strokeStyle = "black";
 		ctx.strokeRect(x * cell_width, y * cell_width, cell_width, cell_width);
 	}
 
