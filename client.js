@@ -3,6 +3,7 @@
 	var deadForm_name = $("#name")[0];
 	var deadForm_color = $("#color")[0];
 	var deadForm_play = $("#play")[0];
+	var scoreboard = $("#scoreboard");
 	var playerList = $("#playerList");
 
 	var canvas = $("#canvas")[0];
@@ -52,11 +53,27 @@
 		ctx.strokeRect(0, 0, screen_width, screen_height);
 	}
 
+	function calcSnakeScore(snake) {
+		return (snake.size - 5) + snake.kills;
+	}
+
+	function calcSnakeAge(snake) {
+		return Math.round((Date.now() - snake.lifeStart) / 1000);
+	}
+
 	function updateScoreboard() {
-		playerList.empty();
+		scoreboard.empty();
 		for (snakeId in snakes) {
 			var snake = snakes[snakeId];
-			$("<li><span class='bullet' style=\"color:" + snake.color + "\">■</span>" + snake.name + " (" + snake.score + ")</li>").appendTo(playerList);
+			var dom = "<tr>";
+			dom += "<td class='bullet' style='color: " + snake.color + ";'>■</td>";
+			dom += "<td style='text-align: left;'>" + snake.name + "</td>";
+			dom += "<td>" + calcSnakeAge(snake) + "</td>";
+			dom += "<td>" + snake.size + "</td>";
+			dom += "<td>" + snake.kills + "</td>";
+			dom += "<td>" + calcSnakeScore(snake) + "</td>";
+			dom += "</tr>";
+			$(dom).appendTo(scoreboard);
 		}
 	}
 
