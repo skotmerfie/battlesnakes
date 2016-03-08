@@ -82,10 +82,10 @@ setInterval(function () {
 
 		var snakeCollision = checkSnakeCollision(newX, newY);
 		if (newX === -1 || newX === grid_max_width || newY === -1 || newY === grid_max_height || snakeCollision >= 0) {
-			killedSnakes[id] = id;
+			killedSnakes[id] = snake.id;
 			delete snakes[id];
 
-			if (snakeCollision >= 0) {
+			if (snakeCollision >= 0 && snakeCollision !== snake.id) {
 				snakes[snakeCollision].kills++;
 			}
 		} else {
