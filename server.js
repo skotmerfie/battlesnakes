@@ -3,80 +3,98 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
-app.get('/', function (req, res) {
-	res.sendFile(__dirname + '/index.html');
+app.get("/", function (req, res) {
+	res.sendFile(__dirname + "/index.html");
 });
 
-app.get('/client.js', function (req, res) {
-	res.sendFile(__dirname + '/client.js');
+app.get("/client.js", function (req, res) {
+	res.sendFile(__dirname + "/client.js");
 });
 
 http.listen(port, function () { });
 
+var clients = {};
 var snakes = {};
-var killedSnakes = {};
 var food = {};
+
+var min_food = 3;
 var max_food = 5;
 var grid_max_width = 100;
 var grid_max_height = 70;
 var starting_snake_length = 5;
 
 function log(message) {
-	console.log(Date.now() + ': ' + message);
+	console.log(Date.now() + ": " + message);
 }
 
-io.on('connection', function (socket) {
-	socket.on('snake', function (data) {
+io.on("connection", function (socket) {
+	clients[socket.id] = socket;
+	socket.on("snake", function (data) {
 		var newSnake = {
 			id: data.id,
 			name: data.name,
 			color: data.color,
-			direction: 'right',
+			direction: "right",
 			lifeStart: Date.now(),
 			size: starting_snake_length,
 			kills: 0,
 			cells: []
 		};
-
-		var startingLocation = randomCoordinates();
-		while (startingLocation.x < starting_snake_length) {
-			startingLocation = randomCoordinates();
-		}
 		
-		for (var i = 0; i < starting_snake_length; i++) {
-			newSnake.cells.push({ x: startingLocation.x - i, y: startingLocation.y });
+		var startingLocation = randomCoordinates();
+		var left = startingLocation.x;
+		var right = grid_max_width - startingLocation.x;
+		var top = startingLocation.y;
+		var bottom = grid_max_height - startingLocation.y;
+		var closestWall = Math.min(left, right, top, bottom);
+
+		if (left === closestWall) {
+			newSnake.direction = "right";
+			for (var i = 0; i < starting_snake_length; i++) {
+				newSnake.cells.push({ x: startingLocation.x + starting_snake_length - i, y: startingLocation.y });
+			}
+		} else if (right === closestWall) {
+			newSnake.direction = "left";
+			for (var i = 0; i < starting_snake_length; i++) {
+				newSnake.cells.push({ x: startingLocation.x - starting_snake_length + i, y: startingLocation.y });
+			}
+		} else if (top === closestWall) {
+			newSnake.direction = "down";
+			for (var i = 0; i < starting_snake_length; i++) {
+				newSnake.cells.push({ x: startingLocation.x, y: startingLocation.y + starting_snake_length - i });
+			}
+		} else if (bottom === closestWall) {
+			newSnake.direction = "up";
+			for (var i = 0; i < starting_snake_length; i++) {
+				newSnake.cells.push({ x: startingLocation.x, y: startingLocation.y - starting_snake_length + i });
+			}
 		}
 
 		snakes[newSnake.id] = newSnake;
 	});
 
-	socket.on('direction', function (data) {
+	socket.on("direction", function (data) {
 		var snake = snakes[data.id];
-		if (snake !== undefined) {
+		if (snake !== undefined && snake !== null) {
 			snake.direction = data.direction;
 		}
 	});
-
-	setInterval(function () {
-		socket.emit('snakes', snakes);
-		socket.emit('food', food);
-		socket.emit('killedSnakes', killedSnakes);
-	}, 25);
 });
 
 setInterval(function () {
-	for (id in snakes) {
+	var killedSnakes = {};
+	for (var id in snakes) {
 		var snake = snakes[id];
 
 		var newX = snake.cells[0].x;
 		var newY = snake.cells[0].y;
-		if (snake.direction === 'right') {
+		if (snake.direction === "right") {
 			newX++;
-		} else if (snake.direction === 'left') {
+		} else if (snake.direction === "left") {
 			newX--;
-		} else if (snake.direction === 'down') {
+		} else if (snake.direction === "down") {
 			newY++;
-		} else if (snake.direction === 'up') {
+		} else if (snake.direction === "up") {
 			newY--;
 		}
 
@@ -105,22 +123,25 @@ setInterval(function () {
 		}
 	}
 	createFood();
+	
+	for (var c in clients) {
+		clients[c].emit("data", {
+			snakes: snakes,
+			killedSnakes: killedSnakes,
+			food: food
+		});
+	}
 }, 60);
-
-setInterval(function () {
-	killedSnakes = {};
-	food = {};
-}, 60000);
 
 function randomCoordinates() {
 	return {
-		x: Math.round(Math.random() * grid_max_width),
-		y: Math.round(Math.random() * grid_max_height)
+		x: Math.floor(Math.random() * grid_max_width),
+		y: Math.floor(Math.random() * grid_max_height)
 	};
 }
 
 function checkSnakeCollision(x, y, id) {
-	for (snakeId in snakes) {
+	for (var snakeId in snakes) {
 		var snake = snakes[snakeId];
 		if (snake.id !== id) {
 			for (var i = 0; i < snake.cells.length; i++) {
@@ -134,7 +155,7 @@ function checkSnakeCollision(x, y, id) {
 }
 
 function checkFoodCollision(x, y) {
-	for (id in food) {
+	for (var id in food) {
 		if (x === food[id].x && y === food[id].y) {
 			return id;
 		}
@@ -144,7 +165,7 @@ function checkFoodCollision(x, y) {
 
 function countSnakes() {
 	var count = 0;
-	for (snake in snakes) {
+	for (var snake in snakes) {
 		count++;
 	}
 	return count;
@@ -152,14 +173,14 @@ function countSnakes() {
 
 function countFood() {
 	var count = 0;
-	for (f in food) {
+	for (var f in food) {
 		count++;
 	}
 	return count;
 }
 
 function createFood() {
-	if (countFood() < Math.min(Math.max(1, countSnakes()), max_food)) {
+	if (countFood() < Math.min(Math.max(min_food, countSnakes()), max_food)) {
 		food[Date.now()] = randomCoordinates();
 	}
 }

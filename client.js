@@ -32,7 +32,7 @@
 	}
 
 	function paintSnakes() {
-		for (snakeId in snakes) {
+		for (var snakeId in snakes) {
 			var snake = snakes[snakeId];
 			for (var i = 0; i < snake.cells.length; i++) {
 				var cell = snake.cells[i];
@@ -42,7 +42,7 @@
 	}
 
 	function paintFood() {
-		for (foodId in food) {
+		for (var foodId in food) {
 			var eatMe = food[foodId];
 			paintCell(eatMe.x, eatMe.y, "Green");
 		}
@@ -85,7 +85,7 @@
 		ctx_sb.fillText('score', 350, 65);
 
 		var snakeRow = 0;
-		for (snakeId in snakes) {
+		for (var snakeId in snakes) {
 			var snake = snakes[snakeId];
 
 			ctx_sb.fillStyle = snake.color;
@@ -122,7 +122,7 @@
 		}
 	}, 500);
 
-	deadForm_play.onclick = function (evt) {
+	deadForm_play.onclick = function () {
 		var name = deadForm_name.value;
 		var color = deadForm_color.value;
 
@@ -133,28 +133,23 @@
 				id: generateId(),
 				name: name,
 				color: color,
-				direction: 'right',
+				direction: "",
 				alive: 1
 			};
 
-			socket.emit('snake', me);
+			socket.emit("snake", me);
 			deadForm.style.display = "none";
 		}
 	};
 
-	socket.on('snakes', function (data) {
-		snakes = data;
-	});
-
-	socket.on('food', function (data) {
-		food = data;
-	});
-
-	socket.on('killedSnakes', function (data) {
-		for (id in data) {
-			if (id == me.id) {
-				me.alive = 0;
-			}
+	socket.on("data", function(data) {
+		snakes = data.snakes;
+		food = data.food;
+		if (snakes[me.id] !== undefined) {
+			me.direction = snakes[me.id].direction;
+		}
+		if (data.killedSnakes[me.id] !== undefined) {
+			me.alive = 0;
 		}
 	});
 
@@ -163,16 +158,15 @@
 			var key = e.which;
 			var newDir = me.direction;
 
-			if (key == "37" && me.direction !== "right" && me.direction !== "left") newDir = "left";
-			else if (key == "38" && me.direction !== "down" && me.direction !== "up") newDir = "up";
-			else if (key == "39" && me.direction !== "left" && me.direction !== "right") newDir = "right";
-			else if (key == "40" && me.direction !== "up" && me.direction !== "down") newDir = "down";
-
+			if (key === 37 && me.direction !== "right") newDir = "left";
+			else if (key === 38 && me.direction !== "down") newDir = "up";
+			else if (key === 39 && me.direction !== "left") newDir = "right";
+			else if (key === 40 && me.direction !== "up") newDir = "down";
+			
 			if (me.direction !== newDir) {
-				me.direction = newDir;
-				socket.emit('direction', {
+				socket.emit("direction", {
 					id: me.id,
-					direction: me.direction
+					direction: newDir
 				});
 			}
 		}
