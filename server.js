@@ -11,6 +11,10 @@ app.get("/client.js", function (req, res) {
 	res.sendFile(__dirname + "/client.js");
 });
 
+app.get("/style.css", function (req, res) {
+	res.sendFile(__dirname + "/style.css");
+});
+
 http.listen(port, function () { });
 
 var clients = {};
