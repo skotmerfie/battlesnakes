@@ -44,14 +44,14 @@
 			-webkit-text-stroke: 1px black;
 			font-size: 24px;
 		}
+		table td {
+			text-align: center;
+		}
 	</style>
 </head>
 <body style="margin:0px;">
 	<canvas id="canvas" width="1000" height="700" style="float: left;"></canvas>
-	<div id="scoreboardArea" style="float:left;">
-		<h1><u>Players</u></h1>
-		<ul id="playerList"></ul>
-	</div>
+	<canvas id="canvas_scoreboard" width="400" height="700" style="float: left;"></canvas>
 
 	<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
 	<script src="/socket.io/socket.io.js"></script>

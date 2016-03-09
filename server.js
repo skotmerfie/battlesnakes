@@ -32,7 +32,9 @@ io.on('connection', function (socket) {
 			name: data.name,
 			color: data.color,
 			direction: 'right',
-			score: 0,
+			lifeStart: Date.now(),
+			size: starting_snake_length,
+			kills: 0,
 			cells: []
 		};
 
@@ -80,18 +82,18 @@ setInterval(function () {
 
 		var snakeCollision = checkSnakeCollision(newX, newY);
 		if (newX === -1 || newX === grid_max_width || newY === -1 || newY === grid_max_height || snakeCollision >= 0) {
-			killedSnakes[id] = id;
+			killedSnakes[id] = snake.id;
 			delete snakes[id];
 
 			if (snakeCollision >= 0 && snakeCollision !== snake.id) {
-				snakes[snakeCollision].score++;
+				snakes[snakeCollision].kills++;
 			}
 		} else {
 			var eatenFood = checkFoodCollision(newX, newY);
 			if (eatenFood >= 0) {
 				delete food[eatenFood];
 				createFood();
-				snake.score++;
+				snake.size++;
 			} else {
 				snake.cells.pop();
 			}
