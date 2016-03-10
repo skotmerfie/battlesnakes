@@ -38,11 +38,12 @@ io.on("connection", function (socket) {
 			id: data.id,
 			name: data.name,
 			color: data.color,
-			direction: "right",
+			direction: "",
 			lifeStart: Date.now(),
 			size: starting_snake_length,
 			kills: 0,
-			cells: []
+			cells: [],
+			moves: []
 		};
 		
 		var startingLocation = randomCoordinates();
@@ -80,7 +81,7 @@ io.on("connection", function (socket) {
 	socket.on("direction", function (data) {
 		var snake = snakes[data.id];
 		if (snake !== undefined && snake !== null) {
-			snake.direction = data.direction;
+			snake.moves.unshift(data.direction);
 		}
 	});
 });
@@ -92,6 +93,7 @@ setInterval(function () {
 
 		var newX = snake.cells[0].x;
 		var newY = snake.cells[0].y;
+		snake.direction = snake.moves.length === 0 ? snake.direction : snake.moves.pop();
 		if (snake.direction === "right") {
 			newX++;
 		} else if (snake.direction === "left") {
@@ -132,7 +134,8 @@ setInterval(function () {
 		clients[c].emit("data", {
 			snakes: snakes,
 			killedSnakes: killedSnakes,
-			food: food
+			food: food,
+			ping: Date.now()
 		});
 	}
 }, 60);

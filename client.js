@@ -9,12 +9,14 @@
 	var screen_width = $("#canvas").width();
 	var screen_height = $("#canvas").height();
 	var cell_width = 10;
+	var max_pings = 100;
 
 	var canvas_scoreboard = $("#canvas_scoreboard")[0];
 	var ctx_sb = canvas_scoreboard.getContext("2d");
 	var scoreboard_width = $("#canvas_scoreboard").width();
 	var scoreboard_height = $("#canvas_scoreboard").height();
 
+	var pings = [];
 	var snakes = {};
 	var food = {};
 	var me = { alive: 0 };
@@ -108,6 +110,21 @@
 		}
 	}
 
+	function calculatePing() {
+		var totalPing = 0;
+		for (var i = 0; i < pings.length; i++) {
+			totalPing += pings[i];
+		}
+		return Math.round(totalPing / pings.length * 100) / 100;
+	}
+
+	function updatePing() {
+		ctx_sb.fillStyle = "black";
+		ctx_sb.font = "10px Arial";
+		ctx_sb.textAlign = "left";
+		ctx_sb.fillText("Ping: " + calculatePing() + "ms", 5, 10);
+	}
+
 	setInterval(function () {
 		paintBackground();
 		paintSnakes();
@@ -116,6 +133,7 @@
 
 	setInterval(function () {
 		updateScoreboard();
+		updatePing();
 
 		if (me.alive === 0) {
 			deadForm.style.display = "block";
@@ -133,7 +151,7 @@
 				id: generateId(),
 				name: name,
 				color: color,
-				direction: "",
+				lastMove: "",
 				alive: 1
 			};
 
@@ -145,28 +163,33 @@
 	socket.on("data", function(data) {
 		snakes = data.snakes;
 		food = data.food;
-		if (snakes[me.id] !== undefined) {
-			me.direction = snakes[me.id].direction;
+		if (snakes[me.id] !== undefined && me.lastMove === "") {
+			me.lastMove = snakes[me.id].direction;
 		}
 		if (data.killedSnakes[me.id] !== undefined) {
 			me.alive = 0;
+		}
+		pings.push(Date.now() - data.ping);
+		if (pings.length > max_pings) {
+			pings = pings.slice(1, pings.length);
 		}
 	});
 
 	$(document).keydown(function (e) {
 		if (me.alive === 1) {
 			var key = e.which;
-			var newDir = me.direction;
+			var nextMove = "";
 
-			if (key === 37 && me.direction !== "right") newDir = "left";
-			else if (key === 38 && me.direction !== "down") newDir = "up";
-			else if (key === 39 && me.direction !== "left") newDir = "right";
-			else if (key === 40 && me.direction !== "up") newDir = "down";
-			
-			if (me.direction !== newDir) {
+			if (key === 37 && me.lastMove !== "right") nextMove = "left";
+			else if (key === 38 && me.lastMove !== "down") nextMove = "up";
+			else if (key === 39 && me.lastMove !== "left") nextMove = "right";
+			else if (key === 40 && me.lastMove !== "up") nextMove = "down";
+
+			if (nextMove !== "" && nextMove !== me.lastMove) {
+				me.lastMove = nextMove;
 				socket.emit("direction", {
 					id: me.id,
-					direction: newDir
+					direction: nextMove
 				});
 			}
 		}
