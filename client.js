@@ -17,6 +17,7 @@
 	var scoreboard_height = $("#canvas_scoreboard").height();
 
 	var pings = [];
+	var frames = 0;
 	var snakes = {};
 	var food = {};
 	var me = { alive: 0 };
@@ -125,23 +126,32 @@
 		ctx_sb.fillText("Ping: " + calculatePing() + "ms", 5, 10);
 	}
 
+	function updateFps() {
+		ctx_sb.fillStyle = "black";
+		ctx_sb.font = "10px Arial";
+		ctx_sb.textAlign = "left";
+		ctx_sb.fillText("FPS: " + frames, 5, 25);
+	}
+
 	setInterval(function () {
 		paintBackground();
 		paintSnakes();
 		paintFood();
+		frames++;
 	}, 30);
 
+	socket.emit("latencyStart", Date.now());
 	setInterval(function () {
 		updateScoreboard();
 		updatePing();
+		updateFps();
+
+		socket.emit("latencyStart", Date.now());
+		frames = 0;
 
 		if (me.alive === 0) {
 			deadForm.style.display = "block";
 		}
-	}, 500);
-
-	setInterval(function () {
-		socket.emit("latencyStart", Date.now());
 	}, 1000);
 
 	socket.on("latencyStop", function (data) {
