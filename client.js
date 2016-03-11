@@ -9,7 +9,7 @@
 	var screen_width = $("#canvas").width();
 	var screen_height = $("#canvas").height();
 	var cell_width = 10;
-	var max_pings = 100;
+	var max_pings = 10;
 
 	var canvas_scoreboard = $("#canvas_scoreboard")[0];
 	var ctx_sb = canvas_scoreboard.getContext("2d");
@@ -65,6 +65,14 @@
 		return Math.round((Date.now() - snake.lifeStart) / 1000);
 	}
 
+	function calculatePing() {
+		var totalPing = 0;
+		for (var i = 0; i < pings.length; i++) {
+			totalPing += pings[i];
+		}
+		return Math.round(totalPing / pings.length * 100) / 100;
+	}
+
 	function updateScoreboard() {
 		ctx_sb.textBaseline = 'alphabetic';
 		ctx_sb.fillStyle = 'white';
@@ -110,14 +118,6 @@
 		}
 	}
 
-	function calculatePing() {
-		var totalPing = 0;
-		for (var i = 0; i < pings.length; i++) {
-			totalPing += pings[i];
-		}
-		return Math.round(totalPing / pings.length * 100) / 100;
-	}
-
 	function updatePing() {
 		ctx_sb.fillStyle = "black";
 		ctx_sb.font = "10px Arial";
@@ -139,6 +139,17 @@
 			deadForm.style.display = "block";
 		}
 	}, 500);
+
+	setInterval(function () {
+		socket.emit("latencyStart", Date.now());
+	}, 1000);
+
+	socket.on("latencyStop", function (data) {
+		pings.push(Date.now() - data);
+		if (pings.length > max_pings) {
+			pings = pings.slice(1, pings.length);
+		}
+	});
 
 	deadForm_play.onclick = function () {
 		var name = deadForm_name.value;
@@ -168,10 +179,6 @@
 		}
 		if (data.killedSnakes[me.id] !== undefined) {
 			me.alive = 0;
-		}
-		pings.push(Date.now() - data.ping);
-		if (pings.length > max_pings) {
-			pings = pings.slice(1, pings.length);
 		}
 	});
 

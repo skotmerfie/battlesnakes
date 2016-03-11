@@ -33,6 +33,7 @@ function log(message) {
 
 io.on("connection", function (socket) {
 	clients[socket.id] = socket;
+
 	socket.on("snake", function (data) {
 		var newSnake = {
 			id: data.id,
@@ -84,6 +85,10 @@ io.on("connection", function (socket) {
 			snake.moves.unshift(data.direction);
 		}
 	});
+
+	socket.on("latencyStart", function (data) {
+		socket.emit("latencyStop", data);
+	});
 });
 
 setInterval(function () {
@@ -129,13 +134,12 @@ setInterval(function () {
 		}
 	}
 	createFood();
-	
+
 	for (var c in clients) {
 		clients[c].emit("data", {
 			snakes: snakes,
 			killedSnakes: killedSnakes,
-			food: food,
-			ping: Date.now()
+			food: food
 		});
 	}
 }, 60);
