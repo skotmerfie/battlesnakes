@@ -101,15 +101,20 @@
 	}
 
 	function paintPing(ctx) {
-		ctx.fillStyle = "black";
-		ctx.font = "10px Arial";
-		ctx.textAlign = "left";
-		ctx.fillText("Ping: " + calculatePing() + "ms", 5, 10);
+		var ping = calculatePing();
+		if (!isNaN(ping)) {
+			ctx.fillStyle = "black";
+			ctx.font = "10px Arial";
+			ctx.textAlign = "left";
+			ctx.fillText("Ping: " + ping + "ms", 5, 10);
+		}
 	}
 
 	setInterval(function () {
 		socket.emit("latencyStart", Date.now());
-		paintScoreboard($("#canvas_scoreboard")[0].getContext("2d"));
+		var ctx = $("#canvas_scoreboard")[0].getContext("2d");
+		paintScoreboard(ctx);
+		paintPing(ctx);
 	}, 1000);
 
 	socket.on("latencyStop", function (data) {
@@ -117,7 +122,6 @@
 		if (pings.length > max_pings) {
 			pings = pings.slice(1, pings.length);
 		}
-		paintPing($("#canvas_scoreboard")[0].getContext("2d"));
 	});
 
 	socket.on("data", function(data) {
