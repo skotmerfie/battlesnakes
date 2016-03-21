@@ -1,21 +1,21 @@
 ﻿var port = process.env.PORT || 8080;
-var app = require('express')();
+var dbUrl = process.env.DATABASE_URL || 'postgresql://postgres:Raider44@localhost:5432/battlesnakes';
+var isLive = process.env.DATABASE_URL !== undefined;
+
+var express = require('express');
+var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var path = require('path');
+var pg = require('pg');
+var db = require('./database.js').make(pg, dbUrl, isLive);
 
+db.init();
+http.listen(port);
+app.use(express.static(path.join(__dirname, 'public')));
 app.get("/", function (req, res) {
-	res.sendFile(__dirname + "/index.html");
+	res.sendFile(path.join(__dirname, 'public') + "/index.html");
 });
-
-app.get("/client.js", function (req, res) {
-	res.sendFile(__dirname + "/client.js");
-});
-
-app.get("/style.css", function (req, res) {
-	res.sendFile(__dirname + "/style.css");
-});
-
-http.listen(port, function () { });
 
 var clients = {};
 var snakes = {};
@@ -23,8 +23,8 @@ var food = {};
 
 var min_food = 3;
 var max_food = 5;
-var grid_max_width = 100;
-var grid_max_height = 70;
+var grid_max_width = 80;
+var grid_max_height = 80;
 var starting_snake_length = 5;
 
 function log(message) {
@@ -33,10 +33,13 @@ function log(message) {
 
 io.on("connection", function (socket) {
 	clients[socket.id] = socket;
+	socket.on("disconnect", function () {
+		delete clients[socket.id];
+	});
 
 	socket.on("snake", function (data) {
 		var newSnake = {
-			id: data.id,
+			id: socket.id.substr(2),
 			name: data.name,
 			color: data.color,
 			direction: "",
@@ -80,7 +83,7 @@ io.on("connection", function (socket) {
 	});
 
 	socket.on("direction", function (data) {
-		var snake = snakes[data.id];
+		var snake = snakes[socket.id.substr(2)];
 		if (snake !== undefined && snake !== null) {
 			snake.moves.unshift(data.direction);
 		}
@@ -89,12 +92,25 @@ io.on("connection", function (socket) {
 	socket.on("latencyStart", function (data) {
 		socket.emit("latencyStop", data);
 	});
+
+	socket.on('message', function (message) {
+		emitMessage(message);
+	});
 });
+
+// send a chat message to each client
+function emitMessage(message) {
+	for (var c in clients) {
+		if (clients[c] !== null) {
+			clients[c].emit('chat', message);
+		}
+	}
+}
 
 setInterval(function () {
 	var killedSnakes = {};
-	for (var id in snakes) {
-		var snake = snakes[id];
+	for (var s in snakes) {
+		var snake = snakes[s];
 
 		var newX = snake.cells[0].x;
 		var newY = snake.cells[0].y;
@@ -110,13 +126,12 @@ setInterval(function () {
 		}
 
 		var snakeCollision = checkSnakeCollision(newX, newY);
-		if (newX === -1 || newX === grid_max_width || newY === -1 || newY === grid_max_height || snakeCollision >= 0) {
-			killedSnakes[id] = snake.id;
-			delete snakes[id];
-
-			if (snakeCollision >= 0 && snakeCollision !== snake.id) {
+		if (newX === -1 || newX === grid_max_width || newY === -1 || newY === grid_max_height || snakeCollision !== "") {
+			if (snakeCollision !== "" && snakeCollision !== snake.id) {
 				snakes[snakeCollision].kills++;
 			}
+			killedSnakes[snake.id] = snake.id;
+			delete snakes[snake.id];
 		} else {
 			var eatenFood = checkFoodCollision(newX, newY);
 			if (eatenFood >= 0) {
@@ -151,18 +166,16 @@ function randomCoordinates() {
 	};
 }
 
-function checkSnakeCollision(x, y, id) {
-	for (var snakeId in snakes) {
-		var snake = snakes[snakeId];
-		if (snake.id !== id) {
-			for (var i = 0; i < snake.cells.length; i++) {
-				if (snake.cells[i].x === x && snake.cells[i].y === y) {
-					return snake.id;
-				}
+function checkSnakeCollision(x, y) {
+	for (var s in snakes) {
+		var snake = snakes[s];
+		for (var i = 0; i < snake.cells.length; i++) {
+			if (snake.cells[i].x === x && snake.cells[i].y === y) {
+				return snake.id;
 			}
 		}
 	}
-	return -1;
+	return "";
 }
 
 function checkFoodCollision(x, y) {

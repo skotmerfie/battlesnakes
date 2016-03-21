@@ -1,0 +1,34 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8" />
+	<title>Battle Snakes</title>
+	<link rel="stylesheet" type="text/css" href="style.css" />
+	<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="client.js"></script>
+</head>
+<body>
+	<div id="wrapper">
+		<canvas id="canvas" class="arena" height="800" width="800"></canvas>
+		<div id="rightPanel">
+			<section id="tabsContainer" class="wrapper">
+				<canvas id="canvas_scoreboard" height="485" width="625"></canvas>
+			</section>
+			<section id="chatContainer" class="wrapper">
+				<ul id="messages"></ul>
+				<form action="" id="chatForm">
+					<input id="chatInput" autocomplete="off" /><button>Send</button>
+				</form>
+			</section>
+		</div>
+	</div>
+	<div id="deadForm" style="display: none;">
+		<form action="" id="snakeForm">
+			<div><label for="name">Name:</label><input type="text" id="name" /></div>
+			<div><label for="color">Color:</label><input type="color" id="color" /></div>
+			<div id="button"><button>Play</button></div>
+		</form>
+	</div>
+</body>
+</html>
