@@ -13,7 +13,7 @@
 		<canvas id="canvas" class="arena" height="800" width="800"></canvas>
 		<div id="rightPanel">
 			<section id="tabsContainer" class="wrapper">
-				<canvas id="canvas_scoreboard" height="485" width="625"></canvas>
+				<canvas id="canvas_scoreboard" height="560" width="560"></canvas>
 			</section>
 			<section id="chatContainer" class="wrapper">
 				<ul id="messages"></ul>
@@ -30,5 +30,34 @@
 			<div id="button"><button>Play</button></div>
 		</form>
 	</div>
+
+	<script type="text/javascript">
+		function resize() {
+			var maxWidth = $(window).width() - 310;
+			var maxHeight = $(window).height() - 7;
+			var size = Math.min(maxHeight, maxWidth);
+			$('#canvas').height(size);
+			$('#canvas').width(size);
+
+			var rightPanelWidth = Math.min(Math.max(Math.min($(window).width() - $('#canvas').width() - 13, 560), 300), ($(window).height() - 7) * 0.7);
+			$('#rightPanel').width(rightPanelWidth);
+			$('#tabsContainer').width(rightPanelWidth - 6);
+			$('#tabsContainer').height(rightPanelWidth - 6);
+			$('#canvas_scoreboard').width(rightPanelWidth - 6);
+			$('#canvas_scoreboard').height(rightPanelWidth - 6);
+			$('#chatContainer').height($(window).height() - rightPanelWidth - 12);
+			$('#chatContainer').width(rightPanelWidth);
+			$('#chatForm input').width(rightPanelWidth - 6);
+			$('#messages').height($(window).height() - rightPanelWidth - 34);
+		}
+
+		$(window).resize(function () {
+			resize();
+		});
+
+		$(document).ready(function () {
+			resize();
+		});
+	</script>
 </body>
 </html>

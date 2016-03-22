@@ -22,22 +22,17 @@
 #rightPanel {
 	float: left;
 	margin-left: 3px;
-	width: 650px;
 }
 
 #tabsContainer {
 	margin-bottom: 3px;
 	padding: 3px;
-	width: 642px;
-	height: 542px;
 	float: left;
 }
 
 #chatContainer {
 	padding: 0px;
 	margin: 0px;
-	width: 648px;
-	height: 247px;
 	float: left;
 }
 
@@ -46,7 +41,6 @@
 }
 
 	#chatForm input {
-		width: 642px;
 		margin-left: 1px;
 	}
 
@@ -58,7 +52,6 @@
 	list-style-type: none;
 	margin: 0;
 	padding: 0;
-	height: 225px;
 	overflow-y: scroll;
 }
 

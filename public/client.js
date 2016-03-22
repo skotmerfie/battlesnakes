@@ -29,7 +29,7 @@
 
 	function clearCanvas(ctx) {
 		ctx.fillStyle = "white";
-		ctx.fillRect(0, 0, ctx.canvas.clientWidth, ctx.canvas.clientHeight);
+		ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 	}
 
 	function paintCell(ctx, x, y, color) {
@@ -59,22 +59,26 @@
 	function paintScoreboard(ctx) {
 		clearCanvas(ctx);
 
-		ctx.textBaseline = 'alphabetic';
 		ctx.fillStyle = 'black';
-		ctx.font = 'bold 28px Arial';
-		ctx.textAlign = 'center';
-		ctx.fillText('Players', ((ctx.canvas.clientWidth - 20) / 2), 40);
-		ctx.fillRect(10, 43, ctx.canvas.clientWidth - 20, 2);
 
+		ctx.textBaseline = 'alphabetic';
+		ctx.font = 'bold 28px Arial';
+
+		ctx.textAlign = 'center';
+		ctx.fillText('Players', 275, 40);
+		ctx.fillRect(10, 43, 550, 2);
+
+		ctx.textBaseline = 'middle';
 		ctx.font = 'bold 14px Arial';
+
 		ctx.textAlign = 'left';
 		ctx.fillText('name', 30, 65, 150);
 
 		ctx.textAlign = 'center';
-		ctx.fillText('age', 200, 65);
-		ctx.fillText('size', 250, 65);
-		ctx.fillText('kills', 300, 65);
-		ctx.fillText('score', 350, 65);
+		ctx.fillText('age', 250, 65);
+		ctx.fillText('size', 325, 65);
+		ctx.fillText('kills', 400, 65);
+		ctx.fillText('score', 475, 65);
 
 		var snakeRow = 0;
 		for (var s in snakes) {
@@ -91,10 +95,10 @@
 			ctx.textAlign = 'left';
 			ctx.fillText(snake.name, 30, snakeRow * 25 + 85, 150);
 			ctx.textAlign = 'center';
-			ctx.fillText(calcSnakeAge(snake), 200, snakeRow * 25 + 85, 50);
-			ctx.fillText(snake.size, 250, snakeRow * 25 + 85, 50);
-			ctx.fillText(snake.kills, 300, snakeRow * 25 + 85, 50);
-			ctx.fillText(calcSnakeScore(snake), 350, snakeRow * 25 + 85, 50);
+			ctx.fillText(calcSnakeAge(snake), 250, snakeRow * 25 + 85, 50);
+			ctx.fillText(snake.size, 325, snakeRow * 25 + 85, 50);
+			ctx.fillText(snake.kills, 400, snakeRow * 25 + 85, 50);
+			ctx.fillText(calcSnakeScore(snake), 475, snakeRow * 25 + 85, 50);
 
 			snakeRow++;
 		}
