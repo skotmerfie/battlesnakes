@@ -10,7 +10,16 @@ var path = require('path');
 var pg = require('pg');
 var db = require('./database.js').make(pg, dbUrl, isLive);
 
-db.init();
+
+function getHighscoresResult(data) {
+	highscores = data;
+	emitHighscores();
+}
+function loadHighscores() {
+	db.getHighscores(getHighscoresResult);
+}
+db.init(loadHighscores);
+
 http.listen(port);
 app.use(express.static(path.join(__dirname, 'public')));
 app.get("/", function (req, res) {
@@ -20,12 +29,14 @@ app.get("/", function (req, res) {
 var clients = {};
 var snakes = {};
 var food = {};
+var highscores = [];
 
 var min_food = 3;
 var max_food = 5;
 var grid_max_width = 80;
 var grid_max_height = 80;
 var starting_snake_length = 5;
+var max_highscores = 5;
 
 function log(message) {
 	console.log(Date.now() + ": " + message);
@@ -96,6 +107,10 @@ io.on("connection", function (socket) {
 	socket.on('message', function (message) {
 		emitMessage(message);
 	});
+
+	if (highscores.length > 0) {
+		socket.emit("highscores", highscores);
+	}
 });
 
 // send a chat message to each client
@@ -103,6 +118,14 @@ function emitMessage(message) {
 	for (var c in clients) {
 		if (clients[c] !== null) {
 			clients[c].emit('chat', message);
+		}
+	}
+}
+
+function emitHighscores() {
+	for (var c in clients) {
+		if (clients[c] !== null) {
+			clients[c].emit('highscores', highscores);
 		}
 	}
 }
@@ -130,6 +153,7 @@ setInterval(function () {
 			if (snakeCollision !== "" && snakeCollision !== snake.id) {
 				snakes[snakeCollision].kills++;
 			}
+			checkHighscore(snake.name, calculateScore(snake));
 			killedSnakes[snake.id] = snake.id;
 			delete snakes[snake.id];
 		} else {
@@ -207,4 +231,18 @@ function createFood() {
 	if (countFood() < Math.min(Math.max(min_food, countSnakes()), max_food)) {
 		food[Date.now()] = randomCoordinates();
 	}
+}
+
+function checkHighscore(name, score) {
+	if (highscores.length < max_highscores) {
+		db.saveHighscore(name, score, -1, loadHighscores);
+	} else {
+		if (score > highscores[max_highscores - 1].score) {
+			db.saveHighscore(name, score, highscores[max_highscores - 1].id, loadHighscores);
+		}
+	}
+}
+
+function calculateScore(snake) {
+	return (snake.size - 5) + snake.kills;
 }

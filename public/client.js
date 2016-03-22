@@ -4,6 +4,7 @@
 	var pings = [];
 	var snakes = {};
 	var food = {};
+	var highscores = [];
 	var me = { alive: 0 };
 	var socket = io.connect();
 
@@ -57,10 +58,7 @@
 	}
 
 	function paintScoreboard(ctx) {
-		clearCanvas(ctx);
-
 		ctx.fillStyle = 'black';
-
 		ctx.textBaseline = 'alphabetic';
 		ctx.font = 'bold 28px Arial';
 
@@ -104,6 +102,37 @@
 		}
 	}
 
+	function paintHighscores(ctx) {
+		ctx.fillStyle = 'black';
+		ctx.textBaseline = 'alphabetic';
+		ctx.font = 'bold 28px Arial';
+
+		ctx.textAlign = 'center';
+		ctx.fillText('High Scores', 275, 390);
+		ctx.fillRect(10, 393, 550, 2);
+
+		ctx.textBaseline = 'middle';
+		ctx.font = 'bold 14px Arial';
+
+		ctx.textAlign = 'left';
+		ctx.fillText('name', 30, 415);
+		ctx.fillText('date', 200, 415);
+		ctx.textAlign = 'center';
+		ctx.fillText('score', 450, 415);
+
+		for (var i = 0; i < highscores.length; i++) {
+			var score = highscores[i];
+			ctx.fillStyle = 'black';
+			ctx.font = '12px Arial';
+			ctx.textBaseline = 'middle';
+			ctx.textAlign = 'left';
+			ctx.fillText(score.username, 30, i * 25 + 435, 200);
+			ctx.fillText(new Date(score.dateutc).toLocaleString(), 200, i * 25 + 435, 150);
+			ctx.textAlign = 'center';
+			ctx.fillText(score.score, 450, i * 25 + 435, 150);
+		}
+	}
+
 	function paintPing(ctx) {
 		var ping = calculatePing();
 		if (!isNaN(ping)) {
@@ -117,7 +146,9 @@
 	setInterval(function () {
 		socket.emit("latencyStart", Date.now());
 		var ctx = $("#canvas_scoreboard")[0].getContext("2d");
+		clearCanvas(ctx);
 		paintScoreboard(ctx);
+		paintHighscores(ctx);
 		paintPing(ctx);
 	}, 1000);
 
@@ -144,6 +175,10 @@
 		clearCanvas(ctx);
 		paintSnakes(ctx);
 		paintFood(ctx);
+	});
+
+	socket.on("highscores", function (data) {
+		highscores = data;
 	});
 
 	$(document).keydown(function (e) {
