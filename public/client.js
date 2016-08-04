@@ -239,6 +239,10 @@
 		e.preventDefault();
 	});
 
+	$('#btnAddBot').click(function(e) {
+		socket.emit("addbot");
+	});
+
 	socket.on('chat', function (message) {
 		$('#messages').append($('<li><b>' + message.name + '</b>: ' + message.message + '</li>'));
 		$('#messages')[0].scrollTop = $('#messages')[0].scrollHeight;

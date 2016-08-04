@@ -37,9 +37,43 @@ var grid_max_width = 80;
 var grid_max_height = 80;
 var starting_snake_length = 5;
 var max_highscores = 5;
+var botCounter = 1;
 
 function log(message) {
 	console.log(Date.now() + ": " + message);
+}
+
+function addSnake(snake) {
+	var startingLocation = randomCoordinates();
+	var left = startingLocation.x;
+	var right = grid_max_width - startingLocation.x;
+	var top = startingLocation.y;
+	var bottom = grid_max_height - startingLocation.y;
+	var closestWall = Math.min(left, right, top, bottom);
+
+	if (left === closestWall) {
+		snake.direction = "right";
+		for (var i = 0; i < starting_snake_length; i++) {
+			snake.cells.push({ x: startingLocation.x + starting_snake_length - i, y: startingLocation.y });
+		}
+	} else if (right === closestWall) {
+		snake.direction = "left";
+		for (var i = 0; i < starting_snake_length; i++) {
+			snake.cells.push({ x: startingLocation.x - starting_snake_length + i, y: startingLocation.y });
+		}
+	} else if (top === closestWall) {
+		snake.direction = "down";
+		for (var i = 0; i < starting_snake_length; i++) {
+			snake.cells.push({ x: startingLocation.x, y: startingLocation.y + starting_snake_length - i });
+		}
+	} else if (bottom === closestWall) {
+		snake.direction = "up";
+		for (var i = 0; i < starting_snake_length; i++) {
+			snake.cells.push({ x: startingLocation.x, y: startingLocation.y - starting_snake_length + i });
+		}
+	}
+
+	snakes[snake.id] = snake;
 }
 
 io.on("connection", function (socket) {
@@ -49,8 +83,9 @@ io.on("connection", function (socket) {
 	});
 
 	socket.on("snake", function (data) {
-		var newSnake = {
+		addSnake({
 			id: socket.id.substr(2),
+			isBot: false,
 			name: data.name,
 			color: data.color,
 			direction: "",
@@ -59,38 +94,7 @@ io.on("connection", function (socket) {
 			kills: 0,
 			cells: [],
 			moves: []
-		};
-		
-		var startingLocation = randomCoordinates();
-		var left = startingLocation.x;
-		var right = grid_max_width - startingLocation.x;
-		var top = startingLocation.y;
-		var bottom = grid_max_height - startingLocation.y;
-		var closestWall = Math.min(left, right, top, bottom);
-
-		if (left === closestWall) {
-			newSnake.direction = "right";
-			for (var i = 0; i < starting_snake_length; i++) {
-				newSnake.cells.push({ x: startingLocation.x + starting_snake_length - i, y: startingLocation.y });
-			}
-		} else if (right === closestWall) {
-			newSnake.direction = "left";
-			for (var i = 0; i < starting_snake_length; i++) {
-				newSnake.cells.push({ x: startingLocation.x - starting_snake_length + i, y: startingLocation.y });
-			}
-		} else if (top === closestWall) {
-			newSnake.direction = "down";
-			for (var i = 0; i < starting_snake_length; i++) {
-				newSnake.cells.push({ x: startingLocation.x, y: startingLocation.y + starting_snake_length - i });
-			}
-		} else if (bottom === closestWall) {
-			newSnake.direction = "up";
-			for (var i = 0; i < starting_snake_length; i++) {
-				newSnake.cells.push({ x: startingLocation.x, y: startingLocation.y - starting_snake_length + i });
-			}
-		}
-
-		snakes[newSnake.id] = newSnake;
+		});
 	});
 
 	socket.on("direction", function (data) {
@@ -106,6 +110,22 @@ io.on("connection", function (socket) {
 
 	socket.on('message', function (message) {
 		emitMessage(message);
+	});
+
+	socket.on('addbot', function() {
+		var id = botCounter++;
+		addSnake({
+			id: id,
+			isBot: true,
+			name: "bot " + id,
+			color: "black",
+			direction: "",
+			lifeStart: Date.now(),
+			size: starting_snake_length,
+			kills: 0,
+			cells: [],
+			moves: []
+		});
 	});
 
 	if (highscores.length > 0) {
