@@ -16,7 +16,7 @@ function getHighscoresResult(data) {
 	emitHighscores();
 }
 function loadHighscores() {
-	db.getHighscores(getHighscoresResult);
+	db.getHighscores(max_highscores, getHighscoresResult);
 }
 db.init(loadHighscores);
 
@@ -122,12 +122,20 @@ io.on("connection", function (socket) {
 		}
 		if (howManyBots < max_bots) {
 			var id = botCounter++;
+			//var botAvoidDeathChance = 1;
+			//var botFindFoodChance = 1;
+			var botAvoidDeathChance = Math.random() * 0.2 + 0.8;
+			var botFindFoodChance = Math.random() * 0.5 + 0.1;
+			var botAvoidOtherSnakes = Math.random() < 0.1 ? 0 : Math.random() * 640;
+			var botName = "bot " + id + " (" + botAvoidDeathChance.toFixed(2) + "; " + botFindFoodChance.toFixed(2) + "; " + botAvoidOtherSnakes.toFixed(0) + ")";
+
 			addSnake({
 				id: id,
 				isBot: true,
-				botAvoidDeathChance: Math.random() * 0.2 + 0.8,
-				botFindFoodChance: Math.random() * 0.3 + 0.1,
-				name: "bot " + id,
+				botAvoidDeathChance: botAvoidDeathChance,
+				botFindFoodChance: botFindFoodChance,
+				botAvoidOtherSnakes: botAvoidOtherSnakes,
+				name: botName,
 				color: randomColor(),
 				direction: "",
 				lifeStart: Date.now(),
@@ -187,7 +195,9 @@ setInterval(function () {
 			if (snakeCollision !== "" && snakeCollision !== snake.id) {
 				snakes[snakeCollision].kills++;
 			}
-			checkHighscore(snake.name, calculateScore(snake));
+			if (!snake.isBot) {
+				checkHighscore(snake.name, calculateScore(snake));
+			}
 			killedSnakes[snake.id] = snake.id;
 			delete snakes[snake.id];
 		} else {
@@ -221,6 +231,54 @@ function moveBot(snake) {
 	var currentDirection = snake.direction;
 	var botX = snake.cells[0].x;
 	var botY = snake.cells[0].y;
+	if (Math.random() < snake.botFindFoodChance) {
+		var targetFood = findTargetFood(snake, botX, botY);
+		if (targetFood != null) {
+			var moveUpOrDown = "";
+			if (botY > targetFood.y)
+				moveUpOrDown = "up"
+			else if (botY < targetFood.y)
+				moveUpOrDown = "down";
+
+			var moveLeftOrRight = "";
+			if (botX > targetFood.x)
+				moveLeftOrRight = "left"
+			else if (botX < targetFood.x)
+				moveLeftOrRight = "right";
+			
+			if (currentDirection !== moveUpOrDown && currentDirection !== moveLeftOrRight) {
+				if (currentDirection === "up") {
+					if (moveLeftOrRight !== "") {
+						if (!checkBotDeath(botX, botY, moveLeftOrRight)) {
+							snake.moves.unshift(moveLeftOrRight);
+							return;
+						}
+					}
+				} else if (currentDirection === "down") {
+					if (moveLeftOrRight !== "") {
+						if (!checkBotDeath(botX, botY, moveLeftOrRight)) {
+							snake.moves.unshift(moveLeftOrRight);
+							return;
+						}
+					}
+				} else if (currentDirection === "right") {
+					if (moveUpOrDown !== "") {
+						if (!checkBotDeath(botX, botY, moveUpOrDown)) {
+							snake.moves.unshift(moveUpOrDown);
+							return;
+						}
+					}
+				} else if (currentDirection === "left") {
+					if (moveUpOrDown !== "") {
+						if (!checkBotDeath(botX, botY, moveUpOrDown)) {
+							snake.moves.unshift(moveUpOrDown);
+							return;
+						}
+					}
+				}
+			}
+		}
+	}
 	var willDie = checkBotDeath(botX, botY, currentDirection);
 	if (willDie && Math.random() < snake.botAvoidDeathChance) {
 		if (currentDirection === "up" || currentDirection === "down") {
@@ -242,49 +300,6 @@ function moveBot(snake) {
 				snake.moves.unshift("up");
 			} else {
 				snake.moves.unshift("down");
-			}
-		}
-	} else if (Math.random() < snake.botFindFoodChance) {
-		var targetFood = findClosestFood(botX, botY);
-		if (targetFood != null) {
-			var moveUpOrDown = "";
-			if (botY > targetFood.y)
-				moveUpOrDown = "up"
-			else if (botY < targetFood.y)
-				moveUpOrDown = "down";
-
-			var moveLeftOrRight = "";
-			if (botX > targetFood.x)
-				moveLeftOrRight = "left"
-			else if (botX < targetFood.x)
-				moveLeftOrRight = "right";
-			
-			if (currentDirection !== moveUpOrDown && currentDirection !== moveLeftOrRight) {
-				if (currentDirection === "up") {
-					if (moveLeftOrRight !== "") {
-						if (!checkBotDeath(botX, botY, moveLeftOrRight)) {
-							snake.moves.unshift(moveLeftOrRight);
-						}
-					}
-				} else if (currentDirection === "down") {
-					if (moveLeftOrRight !== "") {
-						if (!checkBotDeath(botX, botY, moveLeftOrRight)) {
-							snake.moves.unshift(moveLeftOrRight);
-						}
-					}
-				} else if (currentDirection === "right") {
-					if (moveUpOrDown !== "") {
-						if (!checkBotDeath(botX, botY, moveUpOrDown)) {
-							snake.moves.unshift(moveUpOrDown);
-						}
-					}
-				} else if (currentDirection === "left") {
-					if (moveUpOrDown !== "") {
-						if (!checkBotDeath(botX, botY, moveUpOrDown)) {
-							snake.moves.unshift(moveUpOrDown);
-						}
-					}
-				}
 			}
 		}
 	}
@@ -322,6 +337,34 @@ function findClosestFood(x, y) {
 		}
 	}
 	return closestFood;
+}
+
+function findTargetFood(snake, x, y) {
+	var bestFood = null;
+	var bestFoodScore = -999999;
+
+	for (var f in food) {
+		var checkFood = food[f];
+		var distance = Math.abs(checkFood.x - x) + Math.abs(checkFood.y - y);
+		var closestEnemyDistance = 999999;
+		for (var s in snakes) {
+			var enemySnake = snakes[s];
+			if (enemySnake.id !== snake.id) {
+				var enemyDistance = Math.abs(checkFood.x - enemySnake.cells[0].x) + Math.abs(checkFood.y - enemySnake.cells[0].y);
+				if (enemyDistance < closestEnemyDistance) {
+					closestEnemyDistance = enemyDistance;
+				}
+			}
+		}
+
+		var foodScore = (160 / distance) - (snake.botAvoidOtherSnakes / closestEnemyDistance);
+
+		if (foodScore > bestFoodScore) {
+			bestFood = checkFood;
+			bestFoodScore = foodScore;
+		}
+	}
+	return bestFood;
 }
 
 function findFoodOnX(x) {
@@ -392,16 +435,20 @@ function createFood() {
 
 function checkHighscore(name, score) {
 	if (highscores.length < max_highscores) {
-		db.saveHighscore(name, score, -1, loadHighscores);
+		db.saveHighscore(name, score, loadHighscores);
 	} else {
+		console.log("");
+		console.log("NewScore: " + score);
+		console.log("WorstHighScore: " + highscores[max_highscores - 1].score);
 		if (score > highscores[max_highscores - 1].score) {
-			db.saveHighscore(name, score, highscores[max_highscores - 1].id, loadHighscores);
+			console.log("attempting to save highscore");
+			db.saveHighscore(name, score, loadHighscores);
 		}
 	}
 }
 
 function calculateScore(snake) {
-	return (snake.size - 5) + snake.kills;
+	return (snake.size - starting_snake_length) + snake.kills;
 }
 
 function randomColor() {
