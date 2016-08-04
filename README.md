@@ -8,8 +8,9 @@ A hackathon project to explore the possibilities of NodeJS with socket.io; reate
 
 ###Setup:
 1. Using pgAdmin:
-  1. Create a "battlesnakes" database
-  2. Create a "battlesnakes" user with the password of "eatTheFood"
+	1. Create a "battlesnakes" database
+	2. Create a "battlesnakes" user with the password of "eatTheFood"
+	3. Grant the "battlesnakes" user create/temp/connect permissions for the battlesnakes database
 2. Download latest code to local directory 
 3. Open command prompt to code directory and run "npm install" 
 
