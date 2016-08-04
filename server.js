@@ -33,12 +33,14 @@ var highscores = [];
 
 var min_food = 3;
 var max_food = 5;
-var max_bots = 10;
 var grid_max_width = 80;
 var grid_max_height = 80;
 var starting_snake_length = 5;
 var max_highscores = 5;
+var max_bots = 10;
 var botCounter = 1;
+var desiredBots = 0;
+var desiredTickRate = 60;
 
 function log(message) {
 	console.log(Date.now() + ": " + message);
@@ -110,40 +112,28 @@ io.on("connection", function (socket) {
 	});
 
 	socket.on('message', function (message) {
-		emitMessage(message);
-	});
-
-	socket.on('addbot', function() {
-		var howManyBots = 0;
-		for (var s in snakes) {
-			if (snakes[s].isBot) {
-				howManyBots++;
+		var command = message.message;
+		if (command.startsWith("/bots")) {
+			var splitCommand = command.split(" ");
+			if (splitCommand.length > 1) {
+				var botCount = parseInt(splitCommand[1]);
+				if (!isNaN(botCount)) {
+					desiredBots = Math.max(0, Math.min(botCount, max_bots));
+				}
 			}
-		}
-		if (howManyBots < max_bots) {
-			var id = botCounter++;
-			//var botAvoidDeathChance = 1;
-			//var botFindFoodChance = 1;
-			var botAvoidDeathChance = Math.random() * 0.2 + 0.8;
-			var botFindFoodChance = Math.random() * 0.5 + 0.1;
-			var botAvoidOtherSnakes = Math.random() < 0.1 ? 0 : Math.random() * 640;
-			var botName = "bot " + id + " (" + botAvoidDeathChance.toFixed(2) + "; " + botFindFoodChance.toFixed(2) + "; " + botAvoidOtherSnakes.toFixed(0) + ")";
-
-			addSnake({
-				id: id,
-				isBot: true,
-				botAvoidDeathChance: botAvoidDeathChance,
-				botFindFoodChance: botFindFoodChance,
-				botAvoidOtherSnakes: botAvoidOtherSnakes,
-				name: botName,
-				color: randomColor(),
-				direction: "",
-				lifeStart: Date.now(),
-				size: starting_snake_length,
-				kills: 0,
-				cells: [],
-				moves: []
-			});
+		} else if (command.startsWith("/clearbots")) {
+			desiredBots = 0;
+			killBots();
+		} else if (command.startsWith("/tick")) {
+			var splitCommand = command.split(" ");
+			if (splitCommand.length > 1) {
+				var tickRate = parseInt(splitCommand[1]);
+				if (!isNaN(tickRate)) {
+					desiredTickRate = Math.max(10, Math.min(tickRate, 1000));
+				}
+			}
+		} else {
+			emitMessage(message);
 		}
 	});
 
@@ -168,7 +158,8 @@ function emitHighscores() {
 	}
 }
 
-setInterval(function () {
+setTimeout(tick, desiredTickRate);
+function tick() {
 	var killedSnakes = {};
 	for (var s in snakes) {
 		var snake = snakes[s];
@@ -217,6 +208,7 @@ setInterval(function () {
 		}
 	}
 	createFood();
+	createBots();
 
 	for (var c in clients) {
 		clients[c].emit("data", {
@@ -225,7 +217,43 @@ setInterval(function () {
 			food: food
 		});
 	}
-}, 60);
+
+	setTimeout(tick, desiredTickRate);
+}
+
+function killBots() {
+	for (var s in snakes) {
+		if (snakes[s].isBot) {
+			delete snakes[s];
+		}
+	}
+}
+
+function addBot() {
+	if (countBots() < max_bots) {
+		var id = botCounter++;
+		var botAvoidDeathChance = Math.random() * 0.2 + 0.8;
+		var botFindFoodChance = Math.random() * 0.5 + 0.1;
+		var botAvoidOtherSnakes = Math.random() < 0.1 ? 0 : Math.random() * 640;
+		var botName = "bot " + id + " (" + botAvoidDeathChance.toFixed(2) + "; " + botFindFoodChance.toFixed(2) + "; " + botAvoidOtherSnakes.toFixed(0) + ")";
+
+		addSnake({
+			id: id,
+			isBot: true,
+			botAvoidDeathChance: botAvoidDeathChance,
+			botFindFoodChance: botFindFoodChance,
+			botAvoidOtherSnakes: botAvoidOtherSnakes,
+			name: botName,
+			color: randomColor(),
+			direction: "",
+			lifeStart: Date.now(),
+			size: starting_snake_length,
+			kills: 0,
+			cells: [],
+			moves: []
+		});
+	}
+}
 
 function moveBot(snake) {
 	var currentDirection = snake.direction;
@@ -427,9 +455,25 @@ function countFood() {
 	return count;
 }
 
+function countBots() {
+	var howManyBots = 0;
+	for (var s in snakes) {
+		if (snakes[s].isBot) {
+			howManyBots++;
+		}
+	}
+	return howManyBots;
+}
+
 function createFood() {
 	if (countFood() < Math.min(Math.max(min_food, countSnakes()), max_food)) {
 		food[Date.now()] = randomCoordinates();
+	}
+}
+
+function createBots() {
+	if (countBots() < desiredBots) {
+		addBot();
 	}
 }
 
