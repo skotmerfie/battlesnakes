@@ -1,5 +1,5 @@
 ﻿var port = process.env.PORT || 8080;
-var dbUrl = process.env.DATABASE_URL || 'postgresql://postgres:Raider44@localhost:5432/battlesnakes';
+var dbUrl = process.env.DATABASE_URL || 'postgresql://battlesnakes:eatTheFood@localhost:5432/battlesnakes';
 var isLive = process.env.DATABASE_URL !== undefined;
 
 var express = require('express');
