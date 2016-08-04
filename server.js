@@ -437,11 +437,7 @@ function checkHighscore(name, score) {
 	if (highscores.length < max_highscores) {
 		db.saveHighscore(name, score, loadHighscores);
 	} else {
-		console.log("");
-		console.log("NewScore: " + score);
-		console.log("WorstHighScore: " + highscores[max_highscores - 1].score);
 		if (score > highscores[max_highscores - 1].score) {
-			console.log("attempting to save highscore");
 			db.saveHighscore(name, score, loadHighscores);
 		}
 	}

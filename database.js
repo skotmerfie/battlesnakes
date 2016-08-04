@@ -7,58 +7,41 @@ module.exports = {
 		return this;
 	},
 	init: function (callback) {
-		this.pg.connect(this.url, function (err, client) {
+		var client = new this.pg.Client(this.url);
+		client.connect(function(err) {
 			if (err) console.log(err);
-			console.log('QUERY');
-			var query = client.query('create table if not exists highscore ( id serial primary key, username varchar(20) not null, dateUtc timestamp without time zone default (now() at time zone \'utc\'), score integer not null );');
-			query.on('end', function () {
-				client.end();
+			client.query('create table if not exists highscore ( id serial primary key, username varchar(20) not null, dateUtc timestamp without time zone default (now() at time zone \'utc\'), score integer not null );', function(err, result) {
+				if (err) console.log(err);
+				client.end(function(err) {
+					if (err) console.log(err);
+				});
 				callback();
-			});
-			query.on('error', function(error) {
-				console.log('error!');
-				console.log(error);
 			});
 		});
 	},
 	getHighscores: function (top, callback) {
-		var results = [];
-		console.log("getHighscores");
-		this.pg.connect(this.url, function (err, client) {
-			console.log("pg.connect callback");
+		var client = new this.pg.Client(this.url);
+		client.connect(function(err) {
 			if (err) console.log(err);
-			console.log('QUERY');
-			var query = client.query('select * from highscore order by score desc limit ' + top);
-			query.on('row', function (row, result) {
-				results.push(row);
-			});
-			query.on('end', function () {
-				client.end();
-				callback(results);
-			});
-			query.on('error', function(error) {
-				console.log('error!');
-				console.log(error);
+			client.query('select * from highscore order by score desc limit ' + top, function(err, results) {
+				if (err) console.log(err);
+				client.end(function(err) {
+					if (err) console.log(err);
+				});
+				callback(results.rows);
 			});
 		});
 	},
 	saveHighscore: function (name, score, callback) {
-		console.log('saveHighscore');
-		this.pg.connect(this.url, function (err, client) {
-			console.log('pg.connect callback');
-			
+		var client = new this.pg.Client(this.url);
+		client.connect(function(err) {
 			if (err) console.log(err);
-			console.log('QUERY no err');
-			
-			var query = client.query('insert into highscore (username, score) VALUES (\'' + name + '\', ' + score + ');');
-
-			query.on('end', function () {
-				client.end();
+			client.query('insert into highscore (username, score) VALUES (\'' + name + '\', ' + score + ');', function(err) {
+				if (err) console.log(err);
+				client.end(function(err) {
+					if (err) console.log(err);
+				});
 				callback();
-			});
-			query.on('error', function(error) {
-				console.log('error!');
-				console.log(error);
 			});
 		});
 	}
