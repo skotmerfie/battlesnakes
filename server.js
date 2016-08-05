@@ -32,7 +32,7 @@ var food = {};
 var highscores = [];
 
 var min_food = 3;
-var max_food = 5;
+var max_food = 10;
 var grid_max_width = 80;
 var grid_max_height = 80;
 var starting_snake_length = 5;
@@ -41,10 +41,6 @@ var max_bots = 10;
 var botCounter = 1;
 var desiredBots = 0;
 var desiredTickRate = 60;
-
-function log(message) {
-	console.log(Date.now() + ": " + message);
-}
 
 function addSnake(snake) {
 	var startingLocation = randomCoordinates();
@@ -186,9 +182,7 @@ function tick() {
 			if (snakeCollision !== "" && snakeCollision !== snake.id) {
 				snakes[snakeCollision].kills++;
 			}
-			if (!snake.isBot) {
-				checkHighscore(snake.name, calculateScore(snake));
-			}
+			checkHighscore(snake.name, calculateScore(snake));
 			killedSnakes[snake.id] = snake.id;
 			delete snakes[snake.id];
 		} else {
@@ -212,13 +206,25 @@ function tick() {
 
 	for (var c in clients) {
 		clients[c].emit("data", {
-			snakes: snakes,
+			snakes: sortedSnakes(),
 			killedSnakes: killedSnakes,
 			food: food
 		});
 	}
 
 	setTimeout(tick, desiredTickRate);
+}
+
+function sortedSnakes() {
+	var sortableSnakes = [];
+	for (var s in snakes) {
+		var snake = snakes[s];
+		snake.score = calculateScore(snake);
+		sortableSnakes.push(snake);
+	}
+	return sortableSnakes.sort(function(a,b) {
+		return b.score - a.score;
+	});
 }
 
 function killBots() {
@@ -233,7 +239,7 @@ function addBot() {
 	if (countBots() < max_bots) {
 		var id = botCounter++;
 		var botAvoidDeathChance = Math.random() * 0.2 + 0.8;
-		var botFindFoodChance = Math.random() * 0.5 + 0.1;
+		var botFindFoodChance = Math.random() * 0.5 + 0.25;
 		var botAvoidOtherSnakes = Math.random() < 0.1 ? 0 : Math.random() * 640;
 		var botName = "bot " + id + " (" + botAvoidDeathChance.toFixed(2) + "; " + botFindFoodChance.toFixed(2) + "; " + botAvoidOtherSnakes.toFixed(0) + ")";
 
@@ -466,7 +472,7 @@ function countBots() {
 }
 
 function createFood() {
-	if (countFood() < Math.min(Math.max(min_food, countSnakes()), max_food)) {
+	if (countFood() < Math.min(Math.max(min_food, Math.floor(countSnakes() * 0.75)), max_food)) {
 		food[Date.now()] = randomCoordinates();
 	}
 }

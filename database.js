@@ -10,7 +10,7 @@ module.exports = {
 		var client = new this.pg.Client(this.url);
 		client.connect(function(err) {
 			if (err) console.log(err);
-			client.query('create table if not exists highscore ( id serial primary key, username varchar(20) not null, dateUtc timestamp without time zone default (now() at time zone \'utc\'), score integer not null );', function(err, result) {
+			client.query('create table if not exists highscore ( id serial primary key, username varchar(50) not null, dateUtc timestamp without time zone default (now() at time zone \'utc\'), score integer not null );', function(err, result) {
 				if (err) console.log(err);
 				client.end(function(err) {
 					if (err) console.log(err);
@@ -23,7 +23,7 @@ module.exports = {
 		var client = new this.pg.Client(this.url);
 		client.connect(function(err) {
 			if (err) console.log(err);
-			client.query('select * from highscore order by score desc limit ' + top, function(err, results) {
+			client.query('select username, score, dateutc AT TIME ZONE \'GMT\' AS dateutc from highscore order by score desc limit ' + top, function(err, results) {
 				if (err) console.log(err);
 				client.end(function(err) {
 					if (err) console.log(err);

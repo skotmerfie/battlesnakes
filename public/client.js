@@ -2,19 +2,24 @@
 	var cell_width = 10;
 	var max_pings = 10;
 	var pings = [];
-	var snakes = {};
+	var snakes = [];
 	var food = {};
 	var highscores = [];
 	var me = { alive: 0 };
 	var socket = io.connect();
 
-	paintScoreboard($("#canvas_scoreboard")[0].getContext("2d"));
-	$("#deadForm")[0].style.display = "block";
-	$("#name")[0].focus();
-
-	function calcSnakeScore(snake) {
-		return (snake.size - 5) + snake.kills;
+	function showSnakeForm() {
+		$("#deadForm")[0].style.display = "block";
+		$("#name")[0].focus();
 	}
+
+	function hideSnakeForm() {
+		$("#deadForm")[0].style.display = "none";
+		$("#chatInput")[0].focus();
+	}
+
+	paintScoreboard($("#canvas_scoreboard")[0].getContext("2d"));
+	showSnakeForm();
 
 	function calcSnakeAge(snake) {
 		return Math.round((Date.now() - snake.lifeStart) / 1000);
@@ -97,7 +102,7 @@
 			ctx.fillText(calcSnakeAge(snake), 250, snakeRow * 25 + 85, 50);
 			ctx.fillText(snake.size, 325, snakeRow * 25 + 85, 50);
 			ctx.fillText(snake.kills, 400, snakeRow * 25 + 85, 50);
-			ctx.fillText(calcSnakeScore(snake), 475, snakeRow * 25 + 85, 50);
+			ctx.fillText(snake.score, 475, snakeRow * 25 + 85, 50);
 
 			snakeRow++;
 		}
@@ -168,8 +173,7 @@
 		}
 		if (data.killedSnakes[socket.id] !== undefined) {
 			me.alive = 0;
-			$("#deadForm")[0].style.display = "block";
-			$("#name")[0].focus();
+			showSnakeForm();
 		}
 
 		var ctx = $("#canvas")[0].getContext("2d");
@@ -220,21 +224,25 @@
 			};
 
 			socket.emit("snake", me);
-			$("#deadForm")[0].style.display = "none";
-			$("#chatInput")[0].focus();
+			hideSnakeForm();
 		}
 		e.preventDefault();
 	});
 
-	// Chat events
 	$('#chatForm').submit(function (e) {
 		var message = $('#chatInput')[0].value;
 		if (message.length > 0) {
-			socket.emit('message', {
-				name: me.name,
-				color: me.color,
-				message: message
-			});
+			if (message === "/spectate") {
+				hideSnakeForm();
+			} else if (message === "/play") {
+				showSnakeForm();
+			} else {
+				socket.emit('message', {
+					name: me.name,
+					color: me.color,
+					message: message
+				});
+			}
 			$('#chatInput')[0].value = '';
 		}
 		e.preventDefault();
