@@ -171,8 +171,13 @@
 	socket.on("data", function(data) {
 		snakes = data.snakes;
 		food = data.food;
-		if (snakes[socket.id] !== undefined && me.lastMove === "") {
-			me.lastMove = snakes[socket.id].direction;
+		if (me.lastMove === "") {
+			for (var s in snakes) {
+				if (snakes[s].id === socket.id) {
+					me.lastMove = snakes[s].direction;
+					break;
+				}
+			}
 		}
 		if (data.killedSnakes[socket.id] !== undefined) {
 			me.alive = 0;
