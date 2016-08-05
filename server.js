@@ -129,6 +129,9 @@ io.on("connection", function (socket) {
 				}
 			}
 		} else {
+			if (message.name === undefined) {
+				message.name = "unknown " + socket.id.substr(2);
+			}
 			emitMessage(message);
 		}
 	});
@@ -249,6 +252,11 @@ function addBot() {
 			botAvoidDeathChance: botAvoidDeathChance,
 			botFindFoodChance: botFindFoodChance,
 			botAvoidOtherSnakes: botAvoidOtherSnakes,
+			botLastMoves: {
+				rotation: "",
+				countMoves: 0,
+				countTicks: 0
+			},
 			name: botName,
 			color: randomColor(),
 			direction: "",
@@ -261,10 +269,57 @@ function addBot() {
 	}
 }
 
+function checkBotMove(snake, direction) {
+	var botX = snake.cells[0].x;
+	var botY = snake.cells[0].y;
+
+	if (checkBotDeath(botX, botY, direction)) {
+		return false;
+	}
+
+	var rotation = getRotation(snake.direction, direction);
+	if (snake.botLastMoves.rotation === rotation && snake.botLastMoves.countMoves === 3 && snake.botLastMoves.countTicks <= snake.size) {
+		return false;
+	}
+
+	return true;
+}
+
+function makeBotMove(snake, direction) {
+	var rotation = getRotation(snake.direction, direction);
+	if (snake.botLastMoves.rotation === rotation) {
+		snake.botLastMoves.countMoves++;
+	} else {
+		snake.botLastMoves.rotation = rotation;
+		snake.botLastMoves.countMoves = 1;
+		snake.botLastMoves.countTicks = 1;
+	}
+
+	snake.moves.unshift(direction);
+}
+
+function getRotation(fromDirection, toDirection) {
+	if ((fromDirection === "up" && toDirection === "right") ||
+		(fromDirection === "right" && toDirection === "down") ||
+		(fromDirection === "down" && toDirection === "left") ||
+		(fromDirection === "left" && toDirection === "up")
+	) {
+		return "clockwise";
+	} else if ((fromDirection === "up" && toDirection === "left") ||
+		(fromDirection === "left" && toDirection === "down") ||
+		(fromDirection === "down" && toDirection === "right") ||
+		(fromDirection === "right" && toDirection === "up")
+	) {
+		return "counter-clockwise";
+	}
+}
+
 function moveBot(snake) {
 	var currentDirection = snake.direction;
 	var botX = snake.cells[0].x;
 	var botY = snake.cells[0].y;
+	snake.botLastMoves.countTicks++;
+	
 	if (Math.random() < snake.botFindFoodChance) {
 		var targetFood = findTargetFood(snake, botX, botY);
 		if (targetFood != null) {
@@ -281,31 +336,17 @@ function moveBot(snake) {
 				moveLeftOrRight = "right";
 			
 			if (currentDirection !== moveUpOrDown && currentDirection !== moveLeftOrRight) {
-				if (currentDirection === "up") {
+				if (currentDirection === "up" || currentDirection === "down") {
 					if (moveLeftOrRight !== "") {
-						if (!checkBotDeath(botX, botY, moveLeftOrRight)) {
-							snake.moves.unshift(moveLeftOrRight);
+						if (checkBotMove(snake, moveLeftOrRight)) {
+							makeBotMove(snake, moveLeftOrRight);
 							return;
 						}
 					}
-				} else if (currentDirection === "down") {
-					if (moveLeftOrRight !== "") {
-						if (!checkBotDeath(botX, botY, moveLeftOrRight)) {
-							snake.moves.unshift(moveLeftOrRight);
-							return;
-						}
-					}
-				} else if (currentDirection === "right") {
+				} else if (currentDirection === "right" || currentDirection === "left") {
 					if (moveUpOrDown !== "") {
-						if (!checkBotDeath(botX, botY, moveUpOrDown)) {
-							snake.moves.unshift(moveUpOrDown);
-							return;
-						}
-					}
-				} else if (currentDirection === "left") {
-					if (moveUpOrDown !== "") {
-						if (!checkBotDeath(botX, botY, moveUpOrDown)) {
-							snake.moves.unshift(moveUpOrDown);
+						if (checkBotMove(snake, moveUpOrDown)) {
+							makeBotMove(snake, moveUpOrDown);
 							return;
 						}
 					}
@@ -313,27 +354,48 @@ function moveBot(snake) {
 			}
 		}
 	}
+
 	var willDie = checkBotDeath(botX, botY, currentDirection);
 	if (willDie && Math.random() < snake.botAvoidDeathChance) {
 		if (currentDirection === "up" || currentDirection === "down") {
-			var willDieLeft = checkBotDeath(botX, botY, "left");
-			var willDieRight = checkBotDeath(botX, botY, "right");
-			if (!willDieLeft && !willDieRight) {
-				snake.moves.unshift(Math.random() < 0.5 ? "left" : "right");
-			} else if (!willDieLeft) {
-				snake.moves.unshift("left");
+			var canMoveLeft = checkBotMove(snake, "left");
+			var canMoveRight = checkBotMove(snake, "right");
+			if (canMoveLeft && canMoveRight) {
+				makeBotMove(snake, Math.random() < 0.5 ? "left" : "right");
+			} else if (canMoveLeft) {
+				makeBotMove(snake, "left");
+			} else if (canMoveRight) {
+				makeBotMove(snake, "right");
 			} else {
-				snake.moves.unshift("right");
+				/*
+				console.log("")
+				console.log("oh no, going to die!");
+				console.log(snake.name + ": (" + snake.cells[0].x + "," + snake.cells[0].y + ") " + snake.direction);
+				console.log("up: " + whyNoMove(snake, "up"));
+				console.log("down: " + whyNoMove(snake, "down"));
+				console.log("left: " + whyNoMove(snake, "left"));
+				console.log("right: " + whyNoMove(snake, "right"));
+				*/
 			}
 		} else {
-			var willDieUp = checkBotDeath(botX, botY, "up");
-			var willDieDown = checkBotDeath(botX, botY, "down");
-			if (!willDieUp && !willDieDown) {
-				snake.moves.unshift(Math.random() < 0.5 ? "up" : "down");
-			} else if (!willDieUp) {
-				snake.moves.unshift("up");
+			var canMoveUp = checkBotMove(snake, "up");
+			var canMoveDown = checkBotMove(snake, "down");
+			if (canMoveUp && canMoveDown) {
+				makeBotMove(snake, Math.random() < 0.5 ? "up" : "down");
+			} else if (canMoveUp) {
+				makeBotMove(snake, "up");
+			} else if (canMoveDown) {
+				makeBotMove(snake, "down");
 			} else {
-				snake.moves.unshift("down");
+				/*
+				console.log("")
+				console.log("oh no, going to die!");
+				console.log(snake.name + ": (" + snake.cells[0].x + "," + snake.cells[0].y + ") " + snake.direction);
+				console.log("up: " + whyNoMove(snake, "up"));
+				console.log("down: " + whyNoMove(snake, "down"));
+				console.log("left: " + whyNoMove(snake, "left"));
+				console.log("right: " + whyNoMove(snake, "right"));
+				*/
 			}
 		}
 	}
@@ -356,6 +418,31 @@ function checkBotDeath(x, y, direction) {
 	if (newX === -1 || newX === grid_max_width || newY === -1 || newY === grid_max_height || snakeCollision !== "") {
 		return true;
 	}
+}
+
+function whyNoMove(snake, direction) {
+	var newX = snake.cells[0].x;
+	var newY = snake.cells[0].y;
+	if (direction === "right") {
+		newX++;
+	} else if (direction === "left") {
+		newX--;
+	} else if (direction === "down") {
+		newY++;
+	} else if (direction === "up") {
+		newY--;
+	}
+	var snakeCollision = checkSnakeCollision(newX, newY);
+	var rotation = getRotation(snake.direction, direction);
+
+	if (newX === -1 || newX === grid_max_width || newY === -1 || newY === grid_max_height) {
+		return "WALL";
+	} else if (snakeCollision !== "") {
+		return "SNAKE-" + snakeCollision;
+	} else if (snake.botLastMoves.rotation === rotation && snake.botLastMoves.countMoves === 3 && snake.botLastMoves.countTicks <= snake.size) {
+		return "BOX-IN";
+	}
+	return "???"
 }
 
 function findClosestFood(x, y) {

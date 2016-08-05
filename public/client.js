@@ -249,7 +249,8 @@
 	});
 
 	socket.on('chat', function (message) {
-		$('#messages').append($('<li><b>' + message.name + '</b>: ' + message.message + '</li>'));
+		var who = message.name === undefined ? "unknown" : message.name;
+		$('#messages').append($('<li><b>' + who + '</b>: ' + message.message + '</li>'));
 		$('#messages')[0].scrollTop = $('#messages')[0].scrollHeight;
 	});
 });
