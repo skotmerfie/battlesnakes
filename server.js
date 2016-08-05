@@ -41,6 +41,8 @@ var max_bots = 10;
 var botCounter = 1;
 var desiredBots = 0;
 var desiredTickRate = 60;
+var desiredGameMode = "classic";
+var desiredDifficulty = "easy";
 
 function addSnake(snake) {
 	var startingLocation = randomCoordinates();
@@ -115,23 +117,56 @@ io.on("connection", function (socket) {
 				var botCount = parseInt(splitCommand[1]);
 				if (!isNaN(botCount)) {
 					desiredBots = Math.max(0, Math.min(botCount, max_bots));
+					emitMessage({
+						name: "command",
+						message: "bot count set to " + desiredBots
+					});
 				}
 			}
 		} else if (command.startsWith("/clearbots")) {
 			desiredBots = 0;
 			killBots();
+			emitMessage({
+				name: "command",
+				message: "bots cleared"
+			});
 		} else if (command.startsWith("/tick")) {
 			var splitCommand = command.split(" ");
 			if (splitCommand.length > 1) {
 				var tickRate = parseInt(splitCommand[1]);
 				if (!isNaN(tickRate)) {
 					desiredTickRate = Math.max(10, Math.min(tickRate, 1000));
+					emitMessage({
+						name: "command",
+						message: "tick rate set to " + desiredTickRate + "ms"
+					});
+				}
+			}
+		} else if (command.startsWith("/mode")) {
+			var splitCommand = command.split(" ");
+			if (splitCommand.length > 1) {
+				var gameMode = splitCommand[1];
+				if (gameMode === "slither" || gameMode === "classic") {
+					desiredGameMode = gameMode;
+					emitMessage({
+						name: "command",
+						message: "game mode set to " + desiredGameMode
+					});
+				}
+			}
+		} else if (command.startsWith("/difficulty")) {
+			var splitCommand = command.split(" ");
+			if (splitCommand.length > 1) {
+				var difficulty = splitCommand[1];
+				if (difficulty === "easy" || difficulty === "hard") {
+					desiredDifficulty = difficulty;
+					emitMessage({
+						name: "command",
+						message: "bot difficulty set to " + desiredDifficulty
+					});
 				}
 			}
 		} else {
-			if (message.name === undefined) {
-				message.name = "unknown " + socket.id.substr(2);
-			}
 			emitMessage(message);
 		}
 	});
@@ -180,7 +215,7 @@ function tick() {
 			newY--;
 		}
 
-		var snakeCollision = checkSnakeCollision(newX, newY);
+		var snakeCollision = checkSnakeCollision(snake, newX, newY);
 		if (newX === -1 || newX === grid_max_width || newY === -1 || newY === grid_max_height || snakeCollision !== "") {
 			if (snakeCollision !== "" && snakeCollision !== snake.id) {
 				snakes[snakeCollision].kills++;
@@ -241,8 +276,8 @@ function killBots() {
 function addBot() {
 	if (countBots() < max_bots) {
 		var id = botCounter++;
-		var botAvoidDeathChance = Math.random() * 0.2 + 0.8;
-		var botFindFoodChance = Math.random() * 0.5 + 0.25;
+		var botAvoidDeathChance = desiredDifficulty == "hard" ? 1.001 : Math.random() * 0.2 + 0.8;
+		var botFindFoodChance = desiredDifficulty == "hard" ? 1.001 : Math.random() * 0.5 + 0.25;
 		var botAvoidOtherSnakes = Math.random() < 0.1 ? 0 : Math.random() * 640;
 		var botName = "bot " + id + " (" + botAvoidDeathChance.toFixed(2) + "; " + botFindFoodChance.toFixed(2) + "; " + botAvoidOtherSnakes.toFixed(0) + ")";
 
@@ -273,13 +308,15 @@ function checkBotMove(snake, direction) {
 	var botX = snake.cells[0].x;
 	var botY = snake.cells[0].y;
 
-	if (checkBotDeath(botX, botY, direction)) {
+	if (checkBotDeath(snake, botX, botY, direction)) {
 		return false;
 	}
 
-	var rotation = getRotation(snake.direction, direction);
-	if (snake.botLastMoves.rotation === rotation && snake.botLastMoves.countMoves === 3 && snake.botLastMoves.countTicks <= snake.size) {
-		return false;
+	if (desiredGameMode === "classic") {
+		var rotation = getRotation(snake.direction, direction);
+		if (snake.botLastMoves.rotation === rotation && snake.botLastMoves.countMoves === 3 && snake.botLastMoves.countTicks <= snake.size) {
+			return false;
+		}
 	}
 
 	return true;
@@ -355,7 +392,7 @@ function moveBot(snake) {
 		}
 	}
 
-	var willDie = checkBotDeath(botX, botY, currentDirection);
+	var willDie = checkBotDeath(snake, botX, botY, currentDirection);
 	if (willDie && Math.random() < snake.botAvoidDeathChance) {
 		if (currentDirection === "up" || currentDirection === "down") {
 			var canMoveLeft = checkBotMove(snake, "left");
@@ -401,7 +438,7 @@ function moveBot(snake) {
 	}
 }
 
-function checkBotDeath(x, y, direction) {
+function checkBotDeath(snake, x, y, direction) {
 	var newX = x;
 	var newY = y; 
 	if (direction === "right") {
@@ -414,10 +451,11 @@ function checkBotDeath(x, y, direction) {
 		newY--;
 	}
 
-	var snakeCollision = checkSnakeCollision(newX, newY);
+	var snakeCollision = checkSnakeCollision(snake, newX, newY);
 	if (newX === -1 || newX === grid_max_width || newY === -1 || newY === grid_max_height || snakeCollision !== "") {
 		return true;
 	}
+	return false;
 }
 
 function whyNoMove(snake, direction) {
@@ -432,7 +470,7 @@ function whyNoMove(snake, direction) {
 	} else if (direction === "up") {
 		newY--;
 	}
-	var snakeCollision = checkSnakeCollision(newX, newY);
+	var snakeCollision = checkSnakeCollision(snake, newX, newY);
 	var rotation = getRotation(snake.direction, direction);
 
 	if (newX === -1 || newX === grid_max_width || newY === -1 || newY === grid_max_height) {
@@ -511,14 +549,17 @@ function randomCoordinates() {
 	};
 }
 
-function checkSnakeCollision(x, y) {
+function checkSnakeCollision(snake, x, y) {
 	for (var s in snakes) {
-		var snake = snakes[s];
-		for (var i = 0; i < snake.cells.length; i++) {
-			if (snake.cells[i].x === x && snake.cells[i].y === y) {
-				return snake.id;
+		var enemySnake = snakes[s];
+		if (enemySnake.id !== snake.id || desiredGameMode === "classic") {
+			for (var i = 0; i < enemySnake.cells.length; i++) {
+				if (enemySnake.cells[i].x === x && enemySnake.cells[i].y === y) {
+					return enemySnake.id;
+				}
 			}
 		}
+		
 	}
 	return "";
 }

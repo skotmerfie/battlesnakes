@@ -38,9 +38,13 @@
 		ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 	}
 
-	function paintCell(ctx, x, y, bodyColor, outlineColor) {
+	function paintCell(ctx, x, y, bodyColor, outlineColor, inverseColor) {
+		if (inverseColor) {
+			ctx.globalCompositeOperation = "difference";
+		}
 		ctx.fillStyle = bodyColor;
 		ctx.fillRect(x * cell_width, y * cell_width, cell_width, cell_width);
+		ctx.globalCompositeOperation = "source-over";
 		ctx.strokeStyle = outlineColor;
 		ctx.strokeRect(x * cell_width, y * cell_width, cell_width, cell_width);
 	}
@@ -48,10 +52,9 @@
 	function paintSnakes(ctx) {
 		for (var s in snakes) {
 			var snake = snakes[s];
-			for (var i = 0; i < snake.cells.length; i++) {
+			for (var i = snake.cells.length - 1; i >= 0; i--) {
 				var cell = snake.cells[i];
-				paintCell(ctx, cell.x, cell.y, snake.color, snake.isBot ? "Orange" : "Black");
-
+				paintCell(ctx, cell.x, cell.y, snake.color, snake.isBot ? "Orange" : "Black", i == 0);
 			}
 		}
 	}
@@ -59,7 +62,7 @@
 	function paintFood(ctx) {
 		for (var f in food) {
 			var eatMe = food[f];
-			paintCell(ctx, eatMe.x, eatMe.y, "Green", "Black");
+			paintCell(ctx, eatMe.x, eatMe.y, "Green", "Black", false);
 		}
 	}
 
