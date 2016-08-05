@@ -38,13 +38,9 @@
 		ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 	}
 
-	function paintCell(ctx, x, y, bodyColor, outlineColor, inverseColor) {
-		if (inverseColor) {
-			ctx.globalCompositeOperation = "difference";
-		}
+	function paintCell(ctx, x, y, bodyColor, outlineColor) {
 		ctx.fillStyle = bodyColor;
 		ctx.fillRect(x * cell_width, y * cell_width, cell_width, cell_width);
-		ctx.globalCompositeOperation = "source-over";
 		ctx.strokeStyle = outlineColor;
 		ctx.strokeRect(x * cell_width, y * cell_width, cell_width, cell_width);
 	}
@@ -54,7 +50,7 @@
 			var snake = snakes[s];
 			for (var i = snake.cells.length - 1; i >= 0; i--) {
 				var cell = snake.cells[i];
-				paintCell(ctx, cell.x, cell.y, snake.color, snake.isBot ? "Orange" : "Black", i == 0);
+				paintCell(ctx, cell.x, cell.y, i == 0 ? (snake.isBot ? "Black" : "White") : snake.color, snake.isBot ? "Gray" : "Black");
 			}
 		}
 	}
@@ -62,7 +58,7 @@
 	function paintFood(ctx) {
 		for (var f in food) {
 			var eatMe = food[f];
-			paintCell(ctx, eatMe.x, eatMe.y, "Green", "Black", false);
+			paintCell(ctx, eatMe.x, eatMe.y, "Green", "Black");
 		}
 	}
 
@@ -240,7 +236,12 @@
 	$('#chatForm').submit(function (e) {
 		var message = $('#chatInput')[0].value;
 		if (message.length > 0) {
-			if (message === "/spectate") {
+			if (message === "/help") {
+				printHelp();
+				addMessageToChatWindow("\"/spectate\" will hide the \"new snake\" form if you just want to watch.");
+				addMessageToChatWindow("\"/play\" will show the \"new snake\" form to join the game.");
+				addMessageToChatWindow("\"/play\" will show the \"new snake\" form to join the game.");
+			} else if (message === "/spectate") {
 				hideSnakeForm();
 			} else if (message === "/play") {
 				showSnakeForm();
@@ -258,7 +259,11 @@
 
 	socket.on('chat', function (message) {
 		var who = message.name === undefined ? "unknown" : message.name;
-		$('#messages').append($('<li><b>' + who + '</b>: ' + message.message + '</li>'));
-		$('#messages')[0].scrollTop = $('#messages')[0].scrollHeight;
+		addMessageToChatWindow('<b>' + who + '</b>: ' + message.message);
 	});
+
+	function addMessageToChatWindow(message) {
+		$('#messages').append($('<li>' + message + '</li>'));
+		$('#messages')[0].scrollTop = $('#messages')[0].scrollHeight;
+	}
 });

@@ -159,7 +159,7 @@ io.on("connection", function (socket) {
 			var splitCommand = command.split(" ");
 			if (splitCommand.length > 1) {
 				var difficulty = splitCommand[1];
-				if (difficulty === "easy" || difficulty === "hard") {
+				if (difficulty === "easy" || difficulty === "medium" || difficulty === "hard") {
 					desiredDifficulty = difficulty;
 					emitMessage({
 						name: "command",
@@ -277,8 +277,8 @@ function killBots() {
 function addBot() {
 	if (countBots() < max_bots) {
 		var id = botCounter++;
-		var botAvoidDeathChance = desiredDifficulty == "hard" ? 1.001 : Math.random() * 0.2 + 0.8;
-		var botFindFoodChance = desiredDifficulty == "hard" ? 1.001 : Math.random() * 0.5 + 0.25;
+		var botAvoidDeathChance = desiredDifficulty === "hard" ? 1.001 : desiredDifficulty === "easy" ? (Math.random() * 0.3 + 0.6) : (Math.random() * 0.2 + 0.8);
+		var botFindFoodChance = desiredDifficulty === "hard" ? 1.001 : desiredDifficulty === "easy" ? (Math.random() * 0.3 + 0.2) : (Math.random() * 0.5 + 0.25);
 		var botAvoidOtherSnakes = Math.random() < 0.1 ? 0 : Math.random() * 640;
 		var botName = "bot " + id + " (" + botAvoidDeathChance.toFixed(2) + "; " + botFindFoodChance.toFixed(2) + "; " + botAvoidOtherSnakes.toFixed(0) + ")";
 
