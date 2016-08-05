@@ -16,7 +16,7 @@ function getHighscoresResult(data) {
 	emitHighscores();
 }
 function loadHighscores() {
-	db.getHighscores(max_highscores, getHighscoresResult);
+	db.getHighscores(max_highscores, desiredGameMode, getHighscoresResult);
 }
 db.init(loadHighscores);
 
@@ -41,7 +41,7 @@ var max_bots = 10;
 var botCounter = 1;
 var desiredBots = 0;
 var desiredTickRate = 60;
-var desiredGameMode = "classic";
+var desiredGameMode = 0;
 var desiredDifficulty = "easy";
 
 function addSnake(snake) {
@@ -147,10 +147,11 @@ io.on("connection", function (socket) {
 			if (splitCommand.length > 1) {
 				var gameMode = splitCommand[1];
 				if (gameMode === "slither" || gameMode === "classic") {
-					desiredGameMode = gameMode;
+					desiredGameMode = gameMode === "classic" ? 0 : 1;
+					loadHighscores();
 					emitMessage({
 						name: "command",
-						message: "game mode set to " + desiredGameMode
+						message: "game mode set to " + gameMode
 					});
 				}
 			}
@@ -220,7 +221,7 @@ function tick() {
 			if (snakeCollision !== "" && snakeCollision !== snake.id) {
 				snakes[snakeCollision].kills++;
 			}
-			checkHighscore(snake.name, calculateScore(snake));
+			checkHighscore(snake.name, snake.isBot, calculateScore(snake));
 			killedSnakes[snake.id] = snake.id;
 			delete snakes[snake.id];
 		} else {
@@ -312,7 +313,7 @@ function checkBotMove(snake, direction) {
 		return false;
 	}
 
-	if (desiredGameMode === "classic") {
+	if (desiredGameMode === 0) {
 		var rotation = getRotation(snake.direction, direction);
 		if (snake.botLastMoves.rotation === rotation && snake.botLastMoves.countMoves === 3 && snake.botLastMoves.countTicks <= snake.size) {
 			return false;
@@ -552,7 +553,7 @@ function randomCoordinates() {
 function checkSnakeCollision(snake, x, y) {
 	for (var s in snakes) {
 		var enemySnake = snakes[s];
-		if (enemySnake.id !== snake.id || desiredGameMode === "classic") {
+		if (enemySnake.id !== snake.id || desiredGameMode === 0) {
 			for (var i = 0; i < enemySnake.cells.length; i++) {
 				if (enemySnake.cells[i].x === x && enemySnake.cells[i].y === y) {
 					return enemySnake.id;
@@ -611,12 +612,12 @@ function createBots() {
 	}
 }
 
-function checkHighscore(name, score) {
+function checkHighscore(name, isBot, score) {
 	if (highscores.length < max_highscores) {
-		db.saveHighscore(name, score, loadHighscores);
+		db.saveHighscore(name, isBot, score, desiredGameMode, loadHighscores);
 	} else {
 		if (score > highscores[max_highscores - 1].score) {
-			db.saveHighscore(name, score, loadHighscores);
+			db.saveHighscore(name, isBot, score, desiredGameMode, loadHighscores);
 		}
 	}
 }
